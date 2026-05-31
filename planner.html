@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Trip Planner — Global Ticket Finder</title>
+<link rel="manifest" href="manifest.webmanifest" />
+<meta name="theme-color" content="#0f1220" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<style>
+  :root{--bg:#0f1220;--card:#1a1e33;--card2:#232846;--text:#f2f3ff;--muted:#9aa0c3;--accent:#6c5ce7;--accent2:#00cec9;--green:#00b894;--red:#ff7675;--border:#2c3157;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:linear-gradient(160deg,#0f1220,#161a30);color:var(--text);min-height:100vh;padding:16px;}
+  .wrap{max-width:780px;margin:0 auto;}
+  header{text-align:center;margin:18px 0 12px;}
+  header h1{font-size:28px;letter-spacing:-0.5px;}
+  header h1 span{color:var(--accent2);}
+  header p{color:var(--muted);margin-top:6px;font-size:14px;}
+  .nav{text-align:center;margin-bottom:16px;}
+  .nav a{color:var(--accent2);font-size:13px;text-decoration:none;}
+  .controls{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;}
+  .row{display:flex;gap:10px;flex-wrap:wrap;}
+  .field{flex:1;min-width:140px;}
+  label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px;}
+  input,select,textarea{width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--border);background:var(--card2);color:var(--text);font-size:15px;outline:none;font-family:inherit;}
+  input:focus,select:focus,textarea:focus{border-color:var(--accent);}
+  textarea{min-height:60px;resize:vertical;margin-top:0;}
+  .block{margin-top:12px;}
+  .btn{width:100%;margin-top:14px;padding:14px;border:none;border-radius:10px;background:var(--accent);color:#fff;font-size:16px;font-weight:600;cursor:pointer;}
+  .btn:active{transform:scale(0.99);}
+  .btn:disabled{opacity:0.6;cursor:default;}
+  .status{font-size:13px;color:var(--muted);margin-top:10px;min-height:18px;text-align:center;}
+  .spinner{border:3px solid var(--border);border-top:3px solid var(--accent);border-radius:50%;width:26px;height:26px;animation:spin 0.8s linear infinite;margin:24px auto;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .summary{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-top:18px;}
+  .summary h2{font-size:18px;margin-bottom:8px;}
+  .summary p{color:var(--muted);font-size:14px;line-height:1.5;}
+
+  .budget{margin-top:14px;}
+  .budget .bartrack{background:var(--card2);border-radius:999px;height:14px;overflow:hidden;border:1px solid var(--border);}
+  .budget .barfill{height:100%;background:var(--green);transition:width .4s;}
+  .budget .barfill.over{background:var(--red);}
+  .budget .line{display:flex;justify-content:space-between;font-size:13px;margin-top:8px;color:var(--muted);}
+  .budget .line b{color:var(--text);}
+  .breakdown{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+  .chip{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:6px 10px;font-size:12px;color:var(--muted);}
+  .chip b{color:var(--text);}
+
+  .day{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-top:14px;}
+  .day h3{font-size:16px;margin-bottom:2px;}
+  .day .dnum{color:var(--accent2);font-size:12px;text-transform:uppercase;letter-spacing:1px;}
+  .item{display:flex;align-items:flex-start;gap:10px;padding:11px 0;border-top:1px solid var(--border);}
+  .item:first-of-type{border-top:none;}
+  .ico{font-size:18px;width:26px;text-align:center;flex:0 0 auto;}
+  .item .body{flex:1;}
+  .item .name{font-size:15px;font-weight:600;}
+  .item .detail{color:var(--muted);font-size:13px;margin-top:2px;}
+  .item .cost{font-size:13px;color:var(--green);margin-top:2px;}
+  .item a.book{flex:0 0 auto;align-self:center;text-decoration:none;background:var(--accent);color:#fff;font-size:13px;font-weight:600;padding:8px 12px;border-radius:8px;white-space:nowrap;}
+  .empty{text-align:center;color:var(--muted);padding:26px 10px;line-height:1.6;}
+  .note{color:var(--muted);font-size:12px;text-align:center;margin:22px 0 8px;line-height:1.6;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Trip <span>Planner</span></h1>
+    <p>Tell it your budget &amp; interests — get a day-by-day plan with real booking links.</p>
+  </header>
+  <div class="nav"><a href="index.html">→ Switch to the Ticket Finder</a></div>
+
+  <div class="controls">
+    <div class="row">
+      <div class="field"><label for="origin">From</label><input id="origin" placeholder="e.g. Calgary, Canada" /></div>
+      <div class="field"><label for="destination">Destination</label><input id="destination" placeholder="e.g. Paris, France" /></div>
+    </div>
+    <div class="row block">
+      <div class="field" style="max-width:120px;"><label for="days">Days</label><input id="days" type="number" min="1" max="30" value="5" /></div>
+      <div class="field"><label for="budget">Total budget</label><input id="budget" type="number" min="0" value="2000" /></div>
+      <div class="field" style="max-width:120px;"><label for="currency">Currency</label>
+        <select id="currency"><option>CAD</option><option>USD</option><option>EUR</option><option>GBP</option><option>AUD</option></select>
+      </div>
+    </div>
+    <div class="row block">
+      <div class="field" style="max-width:140px;"><label for="party">Travellers</label><input id="party" type="number" min="1" max="20" value="2" /></div>
+      <div class="field"><label for="pace">Pace</label>
+        <select id="pace"><option value="relaxed">Relaxed</option><option value="balanced" selected>Balanced</option><option value="packed">Packed</option></select>
+      </div>
+    </div>
+    <div class="block">
+      <label for="interests">Your interests</label>
+      <textarea id="interests" placeholder="e.g. art museums, history, good food, live music, walking tours"></textarea>
+    </div>
+    <button class="btn" id="plan">Plan my trip</button>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div id="results"></div>
+
+  <p class="note">
+    Itineraries are AI-generated estimates tailored to your budget &amp; interests.<br>
+    Prices are approximate — tap any <b>Book</b> button to see live prices and reserve on the real site.
+  </p>
+</div>
+
+<script>
+function el(id){return document.getElementById(id);}
+function setStatus(m){el("status").textContent=m||"";}
+function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
+
+var ICONS={flight:"✈️",hotel:"🏨",restaurant:"🍽️",attraction:"🎟️",event:"🎤"};
+
+// Build a REAL booking/search link based on the item type (the AI never invents URLs).
+function bookLink(item, dest, origin){
+  var q=encodeURIComponent;
+  var name=item.name||"";
+  var query=item.bookQuery||name;
+  switch(item.type){
+    case "flight":   return "https://www.google.com/travel/flights?q="+q("flights from "+(origin||"")+" to "+dest);
+    case "hotel":    return "https://www.booking.com/searchresults.html?ss="+q(query+" "+dest);
+    case "restaurant":return "https://www.google.com/maps/search/"+q(name+" "+dest);
+    case "event":    return "https://www.ticketmaster.com/search?q="+q(name);
+    case "attraction":
+    default:         return "https://www.getyourguide.com/s/?q="+q(query+" "+dest);
+  }
+}
+
+function money(cur,n){ if(typeof n!=="number"||isNaN(n)) return ""; return cur+" "+Math.round(n).toLocaleString(); }
+
+function renderPlan(plan, dest, origin){
+  var cur=plan.currency||"";
+  var budget=parseInt(el("budget").value,10)||0;
+  var total=plan.totalEstimate||0;
+  var pct=budget?Math.min(100,Math.round(total/budget*100)):0;
+  var over=budget&&total>budget;
+
+  var html="";
+  // Summary + budget bar
+  html+='<div class="summary">';
+  html+='<h2>'+esc(dest)+' · '+(plan.days?plan.days.length:0)+'-day plan</h2>';
+  if(plan.summary) html+='<p>'+esc(plan.summary)+'</p>';
+  html+='<div class="budget">';
+  html+='<div class="bartrack"><div class="barfill'+(over?' over':'')+'" style="width:'+pct+'%"></div></div>';
+  html+='<div class="line"><span>Estimated total: <b>'+money(cur,total)+'</b></span><span>Budget: <b>'+money(cur,budget)+'</b></span></div>';
+  if(over) html+='<div class="line" style="color:var(--red)">Over budget by '+money(cur,total-budget)+' — try fewer days, a lower pace, or a higher budget.</div>';
+  else if(budget) html+='<div class="line" style="color:var(--green)">'+money(cur,budget-total)+' left in budget.</div>';
+  var bd=plan.budgetBreakdown||{};
+  html+='<div class="breakdown">';
+  ["flights","lodging","food","activities"].forEach(function(k){
+    if(bd[k]!=null) html+='<span class="chip">'+k+': <b>'+money(cur,bd[k])+'</b></span>';
+  });
+  html+='</div></div></div>';
+
+  // Days
+  (plan.days||[]).forEach(function(d){
+    html+='<div class="day"><div class="dnum">Day '+esc(d.day)+'</div><h3>'+esc(d.title||"")+'</h3>';
+    (d.items||[]).forEach(function(it){
+      var ico=ICONS[it.type]||"📍";
+      html+='<div class="item">';
+      html+='<div class="ico">'+ico+'</div>';
+      html+='<div class="body"><div class="name">'+esc(it.name||"")+'</div>';
+      if(it.detail) html+='<div class="detail">'+esc(it.detail)+'</div>';
+      if(typeof it.cost==="number"&&it.cost>0) html+='<div class="cost">~'+money(cur,it.cost)+'</div>';
+      else if(it.cost===0) html+='<div class="cost">Free</div>';
+      html+='</div>';
+      html+='<a class="book" target="_blank" rel="noopener" href="'+bookLink(it,dest,origin)+'">Book</a>';
+      html+='</div>';
+    });
+    html+='</div>';
+  });
+  el("results").innerHTML=html;
+}
+
+function doPlan(){
+  var destination=el("destination").value.trim();
+  var origin=el("origin").value.trim();
+  if(!destination){ setStatus("Enter a destination first."); return; }
+
+  var payload={
+    origin:origin, destination:destination,
+    days:el("days").value, budget:el("budget").value,
+    currency:el("currency").value, interests:el("interests").value.trim(),
+    pace:el("pace").value, party:el("party").value
+  };
+
+  el("plan").disabled=true;
+  el("results").innerHTML='<div class="spinner"></div>';
+  setStatus("Building your "+destination+" itinerary… this can take ~15 seconds.");
+
+  fetch("/.netlify/functions/plan",{
+    method:"POST",
+    headers:{"content-type":"application/json"},
+    body:JSON.stringify(payload)
+  })
+  .then(function(r){ return r.json().then(function(j){ return {ok:r.ok,j:j}; }); })
+  .then(function(res){
+    if(!res.ok){
+      el("results").innerHTML='<div class="empty">'+esc((res.j&&res.j.error)||"Something went wrong.")+'</div>';
+      setStatus("");
+      return;
+    }
+    renderPlan(res.j, destination, origin);
+    setStatus("Done — tap any Book button for live prices.");
+  })
+  .catch(function(){
+    el("results").innerHTML='<div class="empty">Couldn\'t reach the planner.<br>'+
+      'If you\'re viewing this in a preview, deploy it to Netlify (with the function + API key) and it\'ll work.</div>';
+    setStatus("");
+  })
+  .finally(function(){ el("plan").disabled=false; });
+}
+
+el("plan").onclick=doPlan;
+</script>
+</body>
+</html>

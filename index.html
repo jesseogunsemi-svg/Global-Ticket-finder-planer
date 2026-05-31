@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Global Ticket Finder</title>
+
+<!-- Make it installable as an app (Add to Home Screen) -->
+<link rel="manifest" href="manifest.webmanifest" />
+<meta name="theme-color" content="#0f1220" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Tickets" />
+<style>
+  :root {
+    --bg: #0f1220;
+    --card: #1a1e33;
+    --card2: #232846;
+    --text: #f2f3ff;
+    --muted: #9aa0c3;
+    --accent: #6c5ce7;
+    --accent2: #00cec9;
+    --green: #00b894;
+    --border: #2c3157;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: linear-gradient(160deg, #0f1220 0%, #161a30 100%);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 16px;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  header { text-align: center; margin: 18px 0 22px; }
+  header h1 { font-size: 28px; letter-spacing: -0.5px; }
+  header h1 span { color: var(--accent2); }
+  header p { color: var(--muted); margin-top: 6px; font-size: 14px; }
+
+  .controls { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; }
+  input, select {
+    width: 100%; padding: 12px 14px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--card2); color: var(--text);
+    font-size: 15px; outline: none;
+  }
+  input:focus, select:focus { border-color: var(--accent); }
+  .field { flex: 1; min-width: 140px; }
+  .btn {
+    width: 100%; margin-top: 14px; padding: 13px; border: none; border-radius: 10px;
+    background: var(--accent); color: #fff; font-size: 16px; font-weight: 600; cursor: pointer;
+  }
+  .btn:active { transform: scale(0.99); }
+  .btn.loc { background: var(--card2); border: 1px solid var(--border); margin-top: 8px; font-weight: 500; font-size: 14px; }
+  .status { font-size: 13px; color: var(--muted); margin-top: 10px; min-height: 18px; text-align: center; }
+
+  .cats { display: flex; gap: 8px; overflow-x: auto; padding: 14px 0 4px; }
+  .cat {
+    flex: 0 0 auto; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--border);
+    background: var(--card); color: var(--muted); font-size: 14px; cursor: pointer; white-space: nowrap;
+  }
+  .cat.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  .results { margin-top: 18px; display: flex; flex-direction: column; gap: 12px; }
+  .event {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
+  }
+  .event-body { padding: 14px; }
+  .event h3 { font-size: 17px; line-height: 1.3; }
+  .badge { display: inline-block; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; margin-bottom: 8px; }
+  .badge.deal { background: rgba(0,184,148,0.18); color: #00d6a4; border: 1px solid rgba(0,184,148,0.4); }
+  .badge.fair { background: rgba(0,206,201,0.15); color: #00cec9; border: 1px solid rgba(0,206,201,0.35); }
+  .badge.premium { background: rgba(255,118,117,0.15); color: #ff7675; border: 1px solid rgba(255,118,117,0.35); }
+  .badge.cheapest { background: #00b894; color: #04231c; border: 1px solid #00b894; }
+  .badge.noprice { background: var(--card2); color: var(--muted); border: 1px solid var(--border); }
+  .meta { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .prices { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .price { flex: 1; min-width: 90px; background: var(--card2); border-radius: 10px; padding: 8px 10px; text-align: center; }
+  .price .lbl { font-size: 11px; color: var(--muted); }
+  .price .val { font-size: 15px; font-weight: 700; margin-top: 2px; }
+  .price.cheap .val { color: var(--green); }
+  .buys { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .buy {
+    flex: 1; min-width: 110px; text-align: center; text-decoration: none; padding: 11px;
+    border-radius: 10px; font-size: 14px; font-weight: 600; color: #fff;
+  }
+  .buy.tm { background: #026cdf; }
+  .buy.sh { background: #3b1869; }
+  .buy.gyg { background: #ff5533; }
+  .buy.viator { background: #00aa6c; }
+  .buy.klook { background: #ff5b00; }
+  .buy.songkick { background: #f80046; }
+  .buy.eventbrite { background: #d1410c; }
+  .estnote { margin-top: 6px; font-style: italic; opacity: 0.85; }
+
+  .note { color: var(--muted); font-size: 12px; text-align: center; margin: 22px 0 8px; line-height: 1.6; }
+  .empty { text-align: center; color: var(--muted); padding: 30px 10px; }
+  .spinner { border: 3px solid var(--border); border-top: 3px solid var(--accent); border-radius: 50%; width: 26px; height: 26px; animation: spin 0.8s linear infinite; margin: 24px auto; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .section-title { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin: 8px 2px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Global <span>Ticket</span> Finder</h1>
+    <p>Live events &amp; prices where Ticketmaster runs — plus things-to-do links worldwide.</p>
+    <p style="margin-top:8px;"><a href="planner.html" style="color:var(--accent2);font-size:13px;text-decoration:none;">→ Plan a whole trip with a budget</a></p>
+  </header>
+
+  <div class="controls">
+    <div class="row">
+      <div class="field">
+        <label for="city">City</label>
+        <input id="city" placeholder="e.g. Calgary, Paris, Tokyo, Lagos" />
+      </div>
+      <div class="field" style="max-width:170px;">
+        <label for="country">Country code</label>
+        <input id="country" placeholder="auto (e.g. US, CA, GB, FR)" />
+      </div>
+    </div>
+
+    <div class="cats" id="cats"></div>
+
+    <button class="btn" id="search">Find Tickets</button>
+    <button class="btn loc" id="useLoc">Use my location</button>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div class="results" id="results"></div>
+
+  <p class="note">
+    Sports, concerts & theatre come live from the Ticketmaster API (real events, real prices, real links)
+    in the US, Canada, UK, Ireland, Australia, Mexico and much of Europe.<br>
+    Attractions, theme parks & travel — and any city Ticketmaster doesn't cover — link out to
+    GetYourGuide / Viator / Klook searches.<br>
+    Prices shown are Ticketmaster face-value ranges; resale sites may differ.
+  </p>
+</div>
+
+<script>
+// ---- CONFIG ----------------------------------------------------------------
+var TM_KEY = "EGhuDwMOzjcGxIlahAL4H05Rat6KVbxT"; // your Ticketmaster consumer key
+
+// ---- CATEGORIES ------------------------------------------------------------
+var CATEGORIES = [
+  { id: "everything", label: "Everything", tm: "" },
+  { id: "sports",     label: "Sports",     tm: "Sports" },
+  { id: "concerts",   label: "Concerts",   tm: "Music" },
+  { id: "arts",       label: "Arts & Theatre", tm: "Arts & Theatre" },
+  { id: "attractions",label: "Attractions",tm: null },
+  { id: "themeparks", label: "Theme Parks",tm: null },
+  { id: "travel",     label: "Travel Experiences", tm: null }
+];
+var activeCat = "everything";
+
+// ---- DOM HELPERS -----------------------------------------------------------
+function el(id) { return document.getElementById(id); }
+function setStatus(msg) { el("status").textContent = msg || ""; }
+// Escape any text coming from the API before putting it in the page (prevents broken HTML / injection).
+function esc(s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+// build category chips
+(function buildCats() {
+  var c = el("cats");
+  CATEGORIES.forEach(function (cat) {
+    var b = document.createElement("div");
+    b.className = "cat" + (cat.id === activeCat ? " active" : "");
+    b.textContent = cat.label;
+    b.onclick = function () {
+      activeCat = cat.id;
+      var chips = c.querySelectorAll(".cat");
+      for (var i = 0; i < chips.length; i++) chips[i].className = "cat";
+      b.className = "cat active";
+    };
+    c.appendChild(b);
+  });
+})();
+
+// ---- LOCATION DETECTION ----------------------------------------------------
+function detectLocation() {
+  setStatus("Detecting your location...");
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      function (pos) { reverseGeocode(pos.coords.latitude, pos.coords.longitude); },
+      function () { ipFallback(); },
+      { timeout: 8000, enableHighAccuracy: true }
+    );
+  } else {
+    ipFallback();
+  }
+}
+
+function reverseGeocode(lat, lon) {
+  fetch("https://nominatim.openstreetmap.org/reverse?format=json&email=jesse.ogunsemi@brentwood.ca&lat=" + lat + "&lon=" + lon)
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      var a = d.address || {};
+      var city = a.city || a.town || a.village || a.county || "";
+      var cc = (a.country_code || "").toUpperCase();
+      if (city) { el("city").value = city; el("country").value = cc; setStatus("Located: " + city); }
+      else ipFallback();
+    })
+    .catch(function () { ipFallback(); });
+}
+
+function ipFallback() {
+  setStatus("Detecting location by network...");
+  fetch("https://ipapi.co/json/")
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (d && d.city) { el("city").value = d.city; el("country").value = d.country_code || ""; setStatus("Located: " + d.city); }
+      else setStatus("Couldn't auto-detect — type your city manually.");
+    })
+    .catch(function () { setStatus("Couldn't auto-detect — type your city manually."); });
+}
+
+// ---- TICKETMASTER SEARCH ---------------------------------------------------
+function searchTicketmaster(city, country, tmClass) {
+  var url = "https://app.ticketmaster.com/discovery/v2/events.json?apikey=" + TM_KEY +
+            "&city=" + encodeURIComponent(city) + "&size=20&sort=date,asc";
+  if (country) url += "&countryCode=" + encodeURIComponent(country);
+  if (tmClass) url += "&classificationName=" + encodeURIComponent(tmClass);
+  return fetch(url).then(function (r) {
+    if (!r.ok) throw new Error("Ticketmaster returned " + r.status);
+    return r.json();
+  });
+}
+
+function formatPrice(pr) {
+  if (!pr || !pr.length) return null;
+  var min = Infinity, max = 0, cur = pr[0].currency || "";
+  pr.forEach(function (p) {
+    if (typeof p.min === "number" && p.min < min) min = p.min;
+    if (typeof p.max === "number" && p.max > max) max = p.max;
+  });
+  if (min === Infinity) return null;
+  if (!max) max = min;
+  var avg = Math.round((min + max) / 2);
+  return { min: Math.round(min), avg: avg, max: Math.round(max), cur: cur };
+}
+
+// ---- SEARCH-REDIRECT FALLBACK CARDS ---------------------------------------
+function searchUrl(platform, query) {
+  var q = encodeURIComponent(query);
+  switch (platform) {
+    case "gyg":       return "https://www.getyourguide.com/s/?q=" + q;
+    case "viator":    return "https://www.viator.com/searchResults/all?text=" + q;
+    case "klook":     return "https://www.klook.com/en-US/search/result/?query=" + q;
+    case "sh":        return "https://www.stubhub.com/find/s/?q=" + q;
+    case "tm":        return "https://www.ticketmaster.com/search?q=" + q;
+    case "songkick":  return "https://www.songkick.com/search?query=" + q;
+    case "eventbrite":return "https://www.eventbrite.com/d/online/all-events/?q=" + q;
+  }
+}
+
+// For cities Ticketmaster doesn't cover (Tokyo, Lagos, etc.), link to live
+// event listings on worldwide platforms, plus things-to-do experiences.
+function fallbackCard(city, cat) {
+  var html = "";
+  // Live events worldwide — Songkick & Eventbrite cover cities Ticketmaster doesn't.
+  if (cat === "everything") {
+    html +=
+      '<div class="event"><div class="event-body">' +
+      '<h3>Live events in ' + esc(city) + '</h3>' +
+      '<div class="meta">Concerts, shows & events from worldwide listings</div>' +
+      '<div class="buys">' +
+        '<a class="buy songkick" target="_blank" rel="noopener" href="' + searchUrl("songkick", city) + '">Songkick</a>' +
+        '<a class="buy eventbrite" target="_blank" rel="noopener" href="' + searchUrl("eventbrite", city) + '">Eventbrite</a>' +
+      '</div></div></div>';
+  }
+  var titles = {
+    attractions: "Attractions & sightseeing in " + city,
+    themeparks:  "Theme parks & rides in " + city,
+    travel:      "Tours & travel experiences in " + city,
+    everything:  "Things to do in " + city
+  };
+  var title = esc(titles[cat] || titles.everything);
+  var q = (cat === "everything" ? "things to do in " : "") + city;
+  html +=
+    '<div class="event"><div class="event-body">' +
+    '<h3>' + title + '</h3>' +
+    '<div class="meta">Browse bookable experiences for your dates</div>' +
+    '<div class="buys">' +
+      '<a class="buy gyg" target="_blank" rel="noopener" href="' + searchUrl("gyg", q) + '">GetYourGuide</a>' +
+      '<a class="buy viator" target="_blank" rel="noopener" href="' + searchUrl("viator", q) + '">Viator</a>' +
+      '<a class="buy klook" target="_blank" rel="noopener" href="' + searchUrl("klook", q) + '">Klook</a>' +
+    '</div></div></div>';
+  return html;
+}
+
+// ---- PRICE ESTIMATION ------------------------------------------------------
+// Typical price ranges (rough) used ONLY when Ticketmaster lists no price.
+var BASELINES = {
+  "Sports":          { min: 30, avg: 75,  max: 180 },
+  "Music":           { min: 45, avg: 110, max: 300 },
+  "Arts & Theatre":  { min: 35, avg: 80,  max: 170 },
+  "_default":        { min: 40, avg: 90,  max: 200 }
+};
+function segmentOf(ev) {
+  try { return ev.classifications[0].segment.name; } catch (e) { return ""; }
+}
+function median(a) {
+  if (!a.length) return null;
+  a.sort(function (x, y) { return x - y; });
+  return a[Math.floor(a.length / 2)];
+}
+// Build a basis for estimates from the events that DO have real prices.
+function setStats(events) {
+  var mins = [], maxs = [], cur = "";
+  events.forEach(function (ev) {
+    var p = formatPrice(ev.priceRanges);
+    if (p) { mins.push(p.min); maxs.push(p.max); if (!cur) cur = p.cur; }
+  });
+  return { cur: cur, medMin: median(mins), medMax: median(maxs) };
+}
+// Always return a price: the real one if available, otherwise an estimate.
+function priceFor(ev, stats) {
+  var real = formatPrice(ev.priceRanges);
+  if (real) { real.est = false; return real; }
+  if (stats.medMin != null) {
+    // Estimate from similar priced events in this same search.
+    var mn = stats.medMin, mx = stats.medMax;
+    return { min: mn, avg: Math.round((mn + mx) / 2), max: mx, cur: stats.cur, est: true };
+  }
+  // No priced events at all → fall back to a typical range for this event type.
+  var b = BASELINES[segmentOf(ev)] || BASELINES._default;
+  return { min: b.min, avg: b.avg, max: b.max, cur: "", est: true };
+}
+
+// ---- RENDER ----------------------------------------------------------------
+// Rank every event (real OR estimated price) into a cheapness tier.
+function buildDealRater(prices) {
+  var mins = prices.map(function (p) { return p.min; }).slice().sort(function (a, b) { return a - b; });
+  if (mins.length < 2) return null;
+  var lo = mins[0], hi = mins[mins.length - 1];
+  var realMins = prices.filter(function (p) { return !p.est; }).map(function (p) { return p.min; });
+  var cheapestReal = realMins.length ? Math.min.apply(null, realMins) : null;
+  var lowCut = lo + (hi - lo) / 3, highCut = lo + 2 * (hi - lo) / 3;
+  return function (p) {
+    if (!p.est && cheapestReal != null && p.min === cheapestReal) return { cls: "cheapest", txt: "🔥 Cheapest of these" };
+    var t;
+    if (hi === lo) t = { cls: "fair", txt: "Fair price" };
+    else if (p.min <= lowCut) t = { cls: "deal", txt: "Great deal" };
+    else if (p.min >= highCut) t = { cls: "premium", txt: "Premium" };
+    else t = { cls: "fair", txt: "Fair price" };
+    if (p.est) t.txt += " (est.)";
+    return t;
+  };
+}
+
+function renderEvents(events, city) {
+  var html = "";
+  var stats = setStats(events);
+  var prices = events.map(function (ev) { return priceFor(ev, stats); });
+  var rateDeal = buildDealRater(prices);
+  events.forEach(function (ev, i) {
+    var venue = "";
+    try { venue = ev._embedded.venues[0].name; } catch (e) {}
+    var date = "";
+    try { date = ev.dates.start.localDate; } catch (e) {}
+    var price = prices[i];
+    var tmUrl = ev.url || searchUrl("tm", ev.name);
+    var shUrl = searchUrl("sh", ev.name + " " + city);
+
+    var badge = "";
+    if (rateDeal) {
+      var b = rateDeal(price);
+      badge = '<div><span class="badge ' + b.cls + '">' + b.txt + '</span></div>';
+    }
+    var cur = price.cur ? esc(price.cur) + " " : "";
+    var L = price.est ? ["Est. cheapest", "Est. average", "Est. highest"] : ["Cheapest", "Average", "Highest"];
+
+    html += '<div class="event"><div class="event-body">';
+    html += badge;
+    html += '<h3>' + esc(ev.name) + '</h3>';
+    html += '<div class="meta">' + (date ? esc(date) : "Date TBA") + (venue ? " · " + esc(venue) : "") + '</div>';
+    html += '<div class="prices">' +
+      '<div class="price cheap"><div class="lbl">' + L[0] + '</div><div class="val">' + cur + price.min + '</div></div>' +
+      '<div class="price"><div class="lbl">' + L[1] + '</div><div class="val">' + cur + price.avg + '</div></div>' +
+      '<div class="price"><div class="lbl">' + L[2] + '</div><div class="val">' + cur + price.max + '</div></div>' +
+      '</div>';
+    if (price.est) {
+      html += '<div class="meta estnote">≈ Estimated — Ticketmaster didn\'t list a price for this event. ' +
+              'Tap "Buy on Ticketmaster" for the exact amount.</div>';
+    }
+    html += '<div class="buys">' +
+      '<a class="buy tm" target="_blank" rel="noopener" href="' + tmUrl + '">Buy on Ticketmaster</a>' +
+      '<a class="buy sh" target="_blank" rel="noopener" href="' + shUrl + '">Compare on StubHub</a>' +
+      '</div>';
+    html += '</div></div>';
+  });
+  return html;
+}
+
+// ---- MAIN SEARCH FLOW ------------------------------------------------------
+function doSearch() {
+  var city = el("city").value.trim();
+  var country = el("country").value.trim().toUpperCase();
+  if (!city) { setStatus("Type a city first."); return; }
+
+  var cat = CATEGORIES.filter(function (c) { return c.id === activeCat; })[0];
+  el("results").innerHTML = '<div class="spinner"></div>';
+  setStatus("Searching " + city + "...");
+
+  // Attraction-type categories: skip API, show fallback cards only
+  if (cat.tm === null) {
+    el("results").innerHTML = fallbackCard(city, cat.id);
+    setStatus("Showing experiences for " + city);
+    return;
+  }
+
+  // Helper: show whatever events we ended up with.
+  function showResults(events, retried) {
+    var out = "";
+    if (events.length) {
+      out += '<div class="section-title">Live events in ' + esc(city) +
+             (retried ? ' (country code ignored)' : '') + '</div>';
+      out += renderEvents(events, city);
+    } else {
+      out += '<div class="empty">No live Ticketmaster events found for "' + esc(city) + '".<br>' +
+             'Ticketmaster mainly covers the US, Canada, UK, Ireland, Australia, Mexico and much of Europe — ' +
+             'if your city is elsewhere, try the things-to-do links below.</div>';
+    }
+    if (cat.id === "everything" || !events.length) {
+      out += '<div class="section-title">Things to do in ' + esc(city) + '</div>';
+      out += fallbackCard(city, "everything");
+    }
+    el("results").innerHTML = out;
+    setStatus(events.length ? "Found " + events.length + " events" : "");
+  }
+
+  searchTicketmaster(city, country, cat.tm)
+    .then(function (data) {
+      var events = (data._embedded && data._embedded.events) || [];
+      // If nothing came back AND a country code was set, the code may be wrong
+      // (e.g. "New York" with "CA"). Retry once without it before giving up.
+      if (!events.length && country) {
+        setStatus("Nothing in " + country + " — retrying without the country code...");
+        return searchTicketmaster(city, "", cat.tm).then(function (data2) {
+          var events2 = (data2._embedded && data2._embedded.events) || [];
+          showResults(events2, events2.length > 0);
+        });
+      }
+      showResults(events, false);
+    })
+    .catch(function (err) {
+      // Graceful degrade to fallback cards
+      el("results").innerHTML =
+        '<div class="empty">Couldn’t reach Ticketmaster (' + err.message + ').<br>' +
+        'If you’re viewing this inside an app sandbox, deploy it as a website and it’ll work.<br>' +
+        'Meanwhile, here are experiences for ' + city + ':</div>' +
+        fallbackCard(city, "everything");
+      setStatus("");
+    });
+}
+
+el("search").onclick = doSearch;
+el("useLoc").onclick = detectLocation;
+el("city").addEventListener("keydown", function (e) { if (e.key === "Enter") doSearch(); });
+
+// Location is detected only when the user taps "Use my location" — no prompt on load.
+
+// Register the service worker so the app can be installed to the home screen.
+// This only does anything on a real website (https), not in a preview/sandbox.
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("sw.js").catch(function () {});
+  });
+}
+</script>
+</body>
+</html>

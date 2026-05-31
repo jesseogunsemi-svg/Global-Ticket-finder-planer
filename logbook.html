@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Project Logbook — Global Ticket Finder</title>
+<style>
+  :root{--bg:#0f1220;--card:#1a1e33;--card2:#232846;--text:#f2f3ff;--muted:#9aa0c3;--accent:#6c5ce7;--accent2:#00cec9;--border:#2c3157;--green:#00b894;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:linear-gradient(160deg,#0f1220,#161a30);color:var(--text);padding:16px;min-height:100vh;}
+  .wrap{max-width:780px;margin:0 auto;}
+  header{text-align:center;margin:16px 0 20px;}
+  header h1{font-size:26px;}
+  header h1 span{color:var(--accent2);}
+  header p{color:var(--muted);font-size:14px;margin-top:6px;}
+  .tabs{display:flex;gap:8px;overflow-x:auto;padding:8px 0 14px;}
+  .tab{flex:0 0 auto;padding:9px 16px;border-radius:999px;border:1px solid var(--border);background:var(--card);color:var(--muted);cursor:pointer;font-size:14px;position:relative;}
+  .tab.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .tab .dot{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;margin-left:6px;}
+  .day{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;}
+  .day h2{font-size:20px;margin-bottom:14px;}
+  .block{margin-bottom:16px;}
+  .block label{display:block;font-size:13px;color:var(--accent2);font-weight:600;margin-bottom:6px;}
+  textarea{width:100%;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:11px 13px;font-size:14px;font-family:inherit;line-height:1.5;resize:vertical;min-height:64px;outline:none;}
+  textarea:focus{border-color:var(--accent);}
+  .moods{display:flex;gap:8px;flex-wrap:wrap;}
+  .mood{font-size:22px;padding:6px 10px;border-radius:10px;border:1px solid var(--border);background:var(--card2);cursor:pointer;}
+  .mood.sel{border-color:var(--accent);background:var(--accent);}
+  .saved{text-align:center;color:var(--muted);font-size:12px;margin-top:14px;min-height:16px;}
+  .actions{display:flex;gap:8px;margin-top:8px;}
+  .btn{flex:1;padding:11px;border:none;border-radius:10px;background:var(--accent);color:#fff;font-weight:600;font-size:14px;cursor:pointer;}
+  .btn.ghost{background:var(--card2);border:1px solid var(--border);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Project <span>Logbook</span></h1>
+    <p>Global Ticket Finder — a 4-day build journey. Days 5–7 ready when you are.</p>
+  </header>
+  <div class="tabs" id="tabs"></div>
+  <div class="day" id="day"></div>
+  <div class="actions">
+    <button class="btn ghost" id="export">Export all (copy to clipboard)</button>
+  </div>
+  <div class="saved" id="saved"></div>
+</div>
+
+<script>
+var MOODS = ["😄","🙂","😐","😫","🤯","🔥"];
+var FIELDS = [
+  {key:"goals",   label:"Goals for the day"},
+  {key:"tools",   label:"Tools & technologies"},
+  {key:"did",     label:"What I accomplished"},
+  {key:"hard",    label:"What was hard or confusing"},
+  {key:"learned", label:"What I learned"}
+];
+
+// Pre-filled real journey (days 1-4). Days 5-7 blank.
+var SEED = {
+  1: {
+    mood:"🙂",
+    goals:"Decide what to build and get a first version on screen. Settled on an NBA ticket finder that shows the cheapest tickets for upcoming games.",
+    tools:"React, Claude artifacts, basic HTML/CSS.",
+    did:"Planned the core features (search by team, list games, sort tickets cheapest-first, filter by price and section). Built the first working UI with realistic demo data so I could see the look and feel.",
+    hard:"Going from a vague idea to actual features. I'm a beginner so even deciding how the app should be structured took a while.",
+    learned:"How to break an idea down into concrete features, and that starting with mock data lets you build the UI before worrying about real data."
+  },
+  2: {
+    mood:"😫",
+    goals:"Connect the app to real ticket data using the SeatGeek API.",
+    tools:"SeatGeek API, fetch requests, Claude artifacts.",
+    did:"Signed up for SeatGeek, got a client ID, and wired it into the app. Tried several times to pull live games.",
+    hard:"Two big walls: I first pasted the wrong credential (a session token instead of the client ID), and then hit a CORS error — the browser blocks direct calls to SeatGeek for security. Tried a proxy and fixing URL encoding but it stayed unreliable.",
+    learned:"What an API key actually is, and what CORS is — browsers block direct requests to many APIs. Learned that not every API is meant to be called straight from the browser."
+  },
+  3: {
+    mood:"🤯",
+    goals:"Get REAL game schedules showing, one way or another.",
+    tools:"ESPN public API, Anthropic API, web search, Ticketmaster API.",
+    did:"Tried ESPN's API (blocked by the sandbox), then used the Anthropic API with web search to pull real info. Eventually got the Ticketmaster API — which returns real events, prices and valid buy links — and learned its key was the missing piece.",
+    hard:"Realising the claude.ai artifact sandbox blocks almost all external APIs, so 'failed to fetch' wasn't my code's fault. Also dealt with API rate limits and the AI inventing fake games/links when it had no real data.",
+    learned:"The environment can be the bug, not the code. Learned the difference between an app sandbox and a real deployed website, and why a backend or a CORS-friendly API matters."
+  },
+  4: {
+    mood:"😄",
+    goals:"Build a project logbook and a presentation generator, then polish everything.",
+    tools:"React, localStorage, Claude artifacts.",
+    did:"Built the detailed logbook (goals, tools, challenges, learnings per day) and a tab that turns it into a 7-minute presentation. Added caching to avoid burning API calls and fixed several bugs.",
+    hard:"Old saved data kept reloading over my changes (storage key issue), and the app kept breaking on mobile and with syntax errors from emojis and modern JS.",
+    learned:"How browser storage persists data, why caching saves API quota, and that keeping code simple and clean prevents a lot of crashes."
+  },
+  5:{mood:"",goals:"",tools:"",did:"",hard:"",learned:""},
+  6:{mood:"",goals:"",tools:"",did:"",hard:"",learned:""},
+  7:{mood:"",goals:"",tools:"",did:"",hard:"",learned:""}
+};
+
+var KEY = "gtf_logbook_v1";
+var data = load();
+var current = 1;
+
+function load(){
+  try{ var s = localStorage.getItem(KEY); if(s) return JSON.parse(s); }catch(e){}
+  return JSON.parse(JSON.stringify(SEED));
+}
+function save(){
+  try{ localStorage.setItem(KEY, JSON.stringify(data)); }catch(e){}
+  flash("Saved ✓");
+}
+function flash(m){ var s=document.getElementById("saved"); s.textContent=m; setTimeout(function(){s.textContent="";},1200); }
+
+function hasContent(d){ return d && (d.goals||d.tools||d.did||d.hard||d.learned||d.mood); }
+
+function buildTabs(){
+  var t=document.getElementById("tabs"); t.innerHTML="";
+  for(var i=1;i<=7;i++){
+    (function(n){
+      var b=document.createElement("div");
+      b.className="tab"+(n===current?" active":"");
+      b.innerHTML="Day "+n+(hasContent(data[n])?'<span class="dot"></span>':"");
+      b.onclick=function(){ current=n; render(); };
+      t.appendChild(b);
+    })(i);
+  }
+}
+
+function render(){
+  buildTabs();
+  var d=data[current];
+  var box=document.getElementById("day");
+  var html='<h2>Day '+current+'</h2>';
+  html+='<div class="block"><label>Mood / vibe check</label><div class="moods" id="moods"></div></div>';
+  FIELDS.forEach(function(f){
+    var v=(d[f.key]||"").replace(/</g,"&lt;");
+    html+='<div class="block"><label>'+f.label+'</label><textarea data-k="'+f.key+'">'+v+'</textarea></div>';
+  });
+  box.innerHTML=html;
+
+  var mEl=document.getElementById("moods");
+  MOODS.forEach(function(m){
+    var s=document.createElement("div");
+    s.className="mood"+(d.mood===m?" sel":"");
+    s.textContent=m;
+    s.onclick=function(){ d.mood=(d.mood===m?"":m); save(); render(); };
+    mEl.appendChild(s);
+  });
+
+  var tas=box.querySelectorAll("textarea");
+  tas.forEach(function(ta){
+    ta.addEventListener("input",function(){ d[ta.getAttribute("data-k")]=ta.value; });
+    ta.addEventListener("blur",save);
+  });
+}
+
+document.getElementById("export").onclick=function(){
+  var out="GLOBAL TICKET FINDER — PROJECT LOGBOOK\n\n";
+  for(var i=1;i<=7;i++){
+    var d=data[i]; if(!hasContent(d)) continue;
+    out+="=== DAY "+i+" "+(d.mood||"")+" ===\n";
+    FIELDS.forEach(function(f){ if(d[f.key]) out+=f.label+": "+d[f.key]+"\n"; });
+    out+="\n";
+  }
+  navigator.clipboard.writeText(out).then(function(){flash("Copied all days ✓");},function(){alert(out);});
+};
+
+render();
+</script>
+</body>
+</html>

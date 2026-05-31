@@ -1,0 +1,4 @@
+# Tells Netlify where the serverless function lives so it deploys with the site.
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
