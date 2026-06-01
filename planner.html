@@ -118,9 +118,9 @@ function bookLink(item, dest, origin){
   var name=item.name||"";
   var query=item.bookQuery||name;
   switch(item.type){
-    case "flight":   return "https://www.google.com/travel/flights?q="+q("flights from "+(origin||"")+" to "+dest);
+    case "flight":   return "https://www.skyscanner.net/transport/flights/?adultsv2=1&query="+q((origin||"")+" to "+dest);
     case "hotel":    return "https://www.booking.com/searchresults.html?ss="+q(query+" "+dest);
-    case "restaurant":return "https://www.google.com/maps/search/"+q(name+" "+dest);
+    case "restaurant":return "https://www.tripadvisor.com/Search?q="+q(name+" "+dest);
     case "event":    return "https://www.ticketmaster.com/search?q="+q(name);
     case "attraction":
     default:         return "https://www.getyourguide.com/s/?q="+q(query+" "+dest);
