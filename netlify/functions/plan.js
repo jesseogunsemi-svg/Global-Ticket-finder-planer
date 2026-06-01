@@ -1,17 +1,18 @@
 // Serverless function: builds a travel itinerary with Claude.
 // Your API key lives in the Netlify environment (ANTHROPIC_API_KEY) and is
-// NEVER sent to the browser.
+// NEVER sent to the browser — that's the whole point of doing this server-side.
 
-const MODEL = "claude-haiku-4-5-20251001";
+const MODEL = "claude-haiku-4-5-20251001"; // change here if you want a cheaper/faster model
 
 exports.handler = async function (event) {
+  // Only accept POST requests.
   if (event.httpMethod !== "POST") {
     return json(405, { error: "Use POST." });
   }
 
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) {
-    return json(500, { error: "Server not configured: ANTHROPIC_API_KEY is missing. Add it in Netlify, then redeploy." });
+    return json(500, { error: "Server not configured: ANTHROPIC_API_KEY is missing. Add it in Netlify → Site settings → Environment variables, then redeploy." });
   }
 
   let input;
@@ -75,11 +76,12 @@ function buildPrompt(t) {
     "- Pace: " + t.pace,
     "",
     "RULES:",
-    "- Keep the estimated grand total at or under the budget. If too low, get as close as possible and say so in the summary.",
+    "- Keep the estimated grand total at or under the budget. If the budget is too low, get as close as possible and say so in the summary.",
     "- Costs are realistic estimates in " + t.currency + ", covering all " + t.party + " traveller(s) combined for each item.",
     "- Include flights (origin to destination and back), lodging, food, attractions, and at least a couple of events/experiences matched to the interests.",
-    "- Tailor everything to the interests and pace. 'relaxed' = fewer items per day; 'packed' = more.",
-    "- Do NOT invent booking URLs. Just give names and a short 'bookQuery' search phrase.",
+    "- Tailor everything to the interests and pace. A 'relaxed' pace has fewer items per day; 'packed' has more.",
+    "- Do NOT invent booking URLs. Just give names and a short 'bookQuery' search phrase; the app builds the links.",
+    "- For every flight item, also include 'fromCode' and 'toCode': the 3-letter IATA airport codes for the main origin and destination airports (e.g. Calgary=YYC, Madrid=MAD, Paris=CDG, London=LHR, Tokyo=NRT). Use the busiest international airport for that city.",
     "",
     "Respond with ONLY valid JSON (no markdown, no commentary) in exactly this shape:",
     "{",
@@ -89,13 +91,14 @@ function buildPrompt(t) {
     '  "budgetBreakdown": { "flights": <n>, "lodging": <n>, "food": <n>, "activities": <n> },',
     '  "days": [',
     '    { "day": 1, "title": "short title", "items": [',
-    '       { "type": "flight|hotel|restaurant|attraction|event", "name": "...", "detail": "short note", "cost": <number>, "bookQuery": "search phrase" }',
+    '       { "type": "flight|hotel|restaurant|attraction|event", "name": "...", "detail": "short note", "cost": <number>, "bookQuery": "search phrase", "fromCode": "IATA (flights only)", "toCode": "IATA (flights only)" }',
     "    ] }",
     "  ]",
     "}"
   ].join("\n");
 }
 
+// Pull the first {...} JSON object out of the model's text, even if wrapped in prose/fences.
 function extractJson(text) {
   if (!text) return null;
   let s = text.trim().replace(/^```(json)?/i, "").replace(/```$/, "").trim();
