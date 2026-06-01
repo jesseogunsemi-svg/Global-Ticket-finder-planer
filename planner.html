@@ -118,7 +118,12 @@ function bookLink(item, dest, origin){
   var name=item.name||"";
   var query=item.bookQuery||name;
   switch(item.type){
-    case "flight":   return "https://www.bing.com/search?q="+q("flights from "+(origin||"")+" to "+dest);
+    case "flight":
+      var fc=(item.fromCode||"").toString().trim().toUpperCase();
+      var tc=(item.toCode||"").toString().trim().toUpperCase();
+      if(/^[A-Z]{3}$/.test(fc) && /^[A-Z]{3}$/.test(tc))
+        return "https://www.kayak.com/flights/"+fc+"-"+tc;       // real flight search on Kayak
+      return "https://www.bing.com/search?q="+q("flights from "+(origin||"")+" to "+dest); // fallback
     case "hotel":    return "https://www.booking.com/searchresults.html?ss="+q(query+" "+dest);
     case "restaurant":return "https://www.tripadvisor.com/Search?q="+q(name+" "+dest);
     case "event":    return "https://www.ticketmaster.com/search?q="+q(name);
