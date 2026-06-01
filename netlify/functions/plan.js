@@ -2,7 +2,7 @@
 // Your API key lives in the Netlify environment (ANTHROPIC_API_KEY) and is
 // NEVER sent to the browser.
 
-const MODEL = "claude-3-5-sonnet-latest";
+const MODEL = "claude-haiku-4-5-20251001";
 
 exports.handler = async function (event) {
   if (event.httpMethod !== "POST") {
