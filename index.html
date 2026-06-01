@@ -3,7 +3,11 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Global Ticket Finder</title>
+<title>Plot a Plot — Ticket Finder</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
 <!-- Make it installable as an app (Add to Home Screen) -->
 <link rel="manifest" href="manifest.webmanifest" />
@@ -15,53 +19,76 @@
 <style>
   :root {
     --bg: #0f1220;
-    --card: #1a1e33;
-    --card2: #232846;
+    --card: #181c30;
+    --card2: #252b4a;
     --text: #f2f3ff;
     --muted: #9aa0c3;
     --accent: #6c5ce7;
+    --accent-hover: #7d6df0;
     --accent2: #00cec9;
     --green: #00b894;
     --border: #2c3157;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: linear-gradient(160deg, #0f1220 0%, #161a30 100%);
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    background: #0b0d1a;
+    background-image:
+      radial-gradient(circle at 12% 18%, rgba(0,206,201,0.30), transparent 40%),
+      radial-gradient(circle at 88% 16%, rgba(108,92,231,0.32), transparent 42%),
+      radial-gradient(circle at 78% 88%, rgba(232,67,147,0.28), transparent 42%),
+      radial-gradient(circle at 18% 86%, rgba(39,174,96,0.24), transparent 42%),
+      radial-gradient(circle at 50% 50%, rgba(231,76,60,0.10), transparent 60%);
+    background-attachment: fixed;
     color: var(--text);
     min-height: 100vh;
     padding: 16px;
   }
   .wrap { max-width: 760px; margin: 0 auto; }
   header { text-align: center; margin: 18px 0 22px; }
-  header h1 { font-size: 28px; letter-spacing: -0.5px; }
+  header h1 { font-size: 34px; font-weight: 800; letter-spacing: -1px; }
   header h1 span { color: var(--accent2); }
   header p { color: var(--muted); margin-top: 6px; font-size: 14px; }
 
-  .controls { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; }
+  .controls { background: rgba(24,28,48,0.82); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,0.10); border-radius: 20px; padding: 22px; box-shadow: 0 18px 60px rgba(0,0,0,0.45); }
   .row { display: flex; gap: 10px; flex-wrap: wrap; }
   label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; }
   input, select {
-    width: 100%; padding: 12px 14px; border-radius: 10px;
+    width: 100%; padding: 12px 14px; border-radius: 12px;
     border: 1px solid var(--border); background: var(--card2); color: var(--text);
-    font-size: 15px; outline: none;
+    font-size: 15px; outline: none; font-family: inherit; transition: all .15s;
   }
-  input:focus, select:focus { border-color: var(--accent); }
+  input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(108,92,231,0.25); }
   .field { flex: 1; min-width: 140px; }
   .btn {
-    width: 100%; margin-top: 14px; padding: 13px; border: none; border-radius: 10px;
-    background: var(--accent); color: #fff; font-size: 16px; font-weight: 600; cursor: pointer;
+    width: 100%; margin-top: 14px; padding: 14px; border: none; border-radius: 12px;
+    background: linear-gradient(90deg, #6c5ce7, #a142d6, #e84393); background-size: 200% 100%;
+    color: #fff; font-size: 16px; font-weight: 700; cursor: pointer;
+    font-family: inherit; transition: background-position .3s, transform .1s, box-shadow .15s;
+    box-shadow: 0 8px 24px rgba(161,66,214,0.35);
   }
+  .btn:hover { background-position: 100% 0; box-shadow: 0 10px 30px rgba(232,67,147,0.45); }
   .btn:active { transform: scale(0.99); }
   .btn.loc { background: var(--card2); border: 1px solid var(--border); margin-top: 8px; font-weight: 500; font-size: 14px; }
   .status { font-size: 13px; color: var(--muted); margin-top: 10px; min-height: 18px; text-align: center; }
 
   .cats { display: flex; gap: 8px; overflow-x: auto; padding: 14px 0 4px; }
   .cat {
-    flex: 0 0 auto; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--border);
-    background: var(--card); color: var(--muted); font-size: 14px; cursor: pointer; white-space: nowrap;
+    --c: #6c5ce7;
+    flex: 0 0 auto; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--c);
+    background: color-mix(in srgb, var(--c) 14%, transparent); color: #fff; font-size: 14px; font-weight: 500;
+    cursor: pointer; white-space: nowrap; transition: all .15s;
   }
-  .cat.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .cat:hover { background: color-mix(in srgb, var(--c) 26%, transparent); }
+  .cat.active { background: var(--c); color: #fff; border-color: var(--c); box-shadow: 0 0 16px color-mix(in srgb, var(--c) 55%, transparent); }
+  .cat:nth-child(1) { --c: #8a94b8; }
+  .cat:nth-child(2) { --c: #e67e22; }
+  .cat:nth-child(3) { --c: #e84393; }
+  .cat:nth-child(4) { --c: #7c5cd6; }
+  .cat:nth-child(5) { --c: #27ae60; }
+  .cat:nth-child(6) { --c: #e74c3c; }
+  .cat:nth-child(7) { --c: #00cec9; }
 
   .results { margin-top: 18px; display: flex; flex-direction: column; gap: 12px; }
   .event {
@@ -105,7 +132,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>Global <span>Ticket</span> Finder</h1>
+    <h1>Plot a <span>Plot</span></h1>
     <p>Live events &amp; prices where Ticketmaster runs — plus things-to-do links worldwide.</p>
     <p style="margin-top:8px;"><a href="planner.html" style="color:var(--accent2);font-size:13px;text-decoration:none;">→ Plan a whole trip with a budget</a></p>
   </header>
